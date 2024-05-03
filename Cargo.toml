@@ -7,6 +7,7 @@ authors = ["刘一手 <860616805@qq.com>"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 
+
 [dependencies]
 eframe = "0.19.0"
 egui = "0.19.0"
