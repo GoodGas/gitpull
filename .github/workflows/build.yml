@@ -1,48 +1,58 @@
-name: Build Rust Project for macOS and Windows
+name: Release
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
+    name: Build on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
         include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact: gitpull
+          - os: windows-latest
+            target: x86_64-pc-windows-gnu
+            artifact: gitpull.exe
           - os: macos-latest
             target: x86_64-apple-darwin
-            artifact-name: gitpull-macos
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            artifact-name: gitpull-windows
+            artifact: gitpull
 
     steps:
-    - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    - name: Set up Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        target: ${{ matrix.target }}
-        profile: minimal
-        override: true
+      - name: Install dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get install -y mingw-w64  
 
-    - name: Cache Cargo dependencies
-      uses: actions/cache@v2
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-          target
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-
+      - name: Setup Rust Environment
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
 
-    - name: Build binary
-      run: cargo build --release --target ${{ matrix.target }} --verbose
+      - name: Add Target
+        run: rustup target add ${{ matrix.target }}
 
-    - name: Upload binary
-      uses: actions/upload-artifact@v2
-      with:
-        name: ${{ matrix.artifact-name }}
-        path: target/${{ matrix.target }}/release/gitpull
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.artifact }}-${{ matrix.os }}
+          path: target/${{ matrix.target }}/release/${{ matrix.artifact }}
