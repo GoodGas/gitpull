@@ -1,65 +1,48 @@
-name: Build
+name: Build Rust Project for macOS and Windows
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    tags:
-      - "v*.*.*"
 
 jobs:
   build:
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os:
-          - windows-latest
-          - macos-latest
-          - macos-14
-
-    runs-on: ${{ matrix.os }}
+        include:
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact-name: gitpull-macos
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact-name: gitpull-windows
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
-      - name: Install Latest Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          default: true
-          override: true
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        target: ${{ matrix.target }}
+        profile: minimal
+        override: true
 
-      - name: Build
-        shell: bash
-        run: |
-          cargo build --all --release
+    - name: Cache Cargo dependencies
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
 
-          binary_extension=""
+    - name: Build binary
+      run: cargo build --release --target ${{ matrix.target }} --verbose
 
-          if [[ "${RUNNER_OS}" == "Windows" ]]; then
-            binary_extension=".exe"
-            binary_path="gitpull-windows-latest${binary_extension}"
-          fi
-          if [[ "${RUNNER_OS}" == "macOS" ]]; then
-            if [[ "${MATRIX_OS}" == "macos-14" ]]; then
-              binary_path="gitpull-macos-m1-latest"
-            else
-              binary_path="gitpull-macos-intel-latest"
-            fi
-          fi
-          mv "target/release/gitpull${binary_extension}" "${binary_path}"
-          echo "${binary_path}" > binary_path.txt
-
-      - name: Install UPX
-        run: sudo apt-get install -y upx
-
-      - name: Compress Binary with UPX
-        run: |
-          binary_path=$(cat binary_path.txt)
-          upx --best "${binary_path}"
-
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: ${{ matrix.os }}-binary
-          path: ${{ env.binary_path }}
+    - name: Upload binary
+      uses: actions/upload-artifact@v2
+      with:
+        name: ${{ matrix.artifact-name }}
+        path: target/${{ matrix.target }}/release/gitpull
