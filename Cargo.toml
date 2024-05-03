@@ -1,0 +1,24 @@
+[package]
+name = "gitpull"
+version = "0.1.0"
+edition = "2021"
+authors = ["刘一手 <860616805@qq.com>"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+[dependencies]
+eframe = "0.19.0"
+egui = "0.19.0"
+git2 = "0.15.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+dirs = "4.0"
+egui_extras = "0.20.0"
+
+
+[profile.release]
+opt-level = "z"
+debug = false
+lto = true
+codegen-units = 1
