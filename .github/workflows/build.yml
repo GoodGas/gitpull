@@ -1,4 +1,4 @@
-name: Build and Release
+name: Build
 
 on:
   workflow_dispatch:
@@ -13,14 +13,10 @@ jobs:
       matrix:
         os:
           - windows-latest
-          - buildjet-16vcpu-ubuntu-2004
           - macos-latest
           - macos-14
 
     runs-on: ${{ matrix.os }}
-
-    env:
-      MATRIX_OS: ${{ matrix.os }}
 
     steps:
       - name: Checkout
@@ -34,16 +30,12 @@ jobs:
           override: true
 
       - name: Build
-        id: build
         shell: bash
         run: |
           cargo build --all --release
 
           binary_extension=""
 
-          if [[ "$RUNNER_OS" == "Linux" ]]; then
-            binary_path="metaboss-ubuntu-latest"
-          fi
           if [[ "${RUNNER_OS}" == "Windows" ]]; then
             binary_extension=".exe"
             binary_path="metaboss-windows-latest${binary_extension}"
@@ -56,11 +48,18 @@ jobs:
             fi
           fi
           mv "target/release/metaboss${binary_extension}" "${binary_path}"
-          echo "::set-output name=binary_path::${binary_path}"
-          strip "${binary_path}"
+          echo "${binary_path}" > binary_path.txt
 
-      - name: Release Tags
-        uses: softprops/action-gh-release@v1
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Install UPX
+        run: sudo apt-get install -y upx
+
+      - name: Compress Binary with UPX
+        run: |
+          binary_path=$(cat binary_path.txt)
+          upx --best "${binary_path}"
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
         with:
-          files: ${{ steps.build.outputs.binary_path }}
+          name: ${{ matrix.os }}-binary
+          path: ${{ env.binary_path }}
