@@ -38,16 +38,16 @@ jobs:
 
           if [[ "${RUNNER_OS}" == "Windows" ]]; then
             binary_extension=".exe"
-            binary_path="metaboss-windows-latest${binary_extension}"
+            binary_path="gitpull-windows-latest${binary_extension}"
           fi
           if [[ "${RUNNER_OS}" == "macOS" ]]; then
             if [[ "${MATRIX_OS}" == "macos-14" ]]; then
-              binary_path="metaboss-macos-m1-latest"
+              binary_path="gitpull-macos-m1-latest"
             else
-              binary_path="metaboss-macos-intel-latest"
+              binary_path="gitpull-macos-intel-latest"
             fi
           fi
-          mv "target/release/metaboss${binary_extension}" "${binary_path}"
+          mv "target/release/gitpull${binary_extension}" "${binary_path}"
           echo "${binary_path}" > binary_path.txt
 
       - name: Install UPX
