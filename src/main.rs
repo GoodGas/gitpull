@@ -51,7 +51,7 @@ impl Default for App {
             progress: 0.0,
             log_buffer: String::new(),
             config_path,
-            font_size: 16.0,
+            font_size: 18.0,
         }
     }
 }
@@ -59,19 +59,35 @@ impl Default for App {
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         let window_size = frame.info().window_info.size;
-        self.font_size = (window_size.x / 50.0).clamp(12.0, 24.0);
+        self.font_size = (window_size.x / 30.0).clamp(12.0, 24.0);
 
         let mut style = (*ctx.style()).clone();
         style.text_styles = [
-            (egui::TextStyle::Heading, egui::FontId::new(self.font_size * 1.2, egui::FontFamily::Proportional)),
-            (egui::TextStyle::Body, egui::FontId::new(self.font_size, egui::FontFamily::Proportional)),
-            (egui::TextStyle::Monospace, egui::FontId::new(self.font_size, egui::FontFamily::Monospace)),
-            (egui::TextStyle::Button, egui::FontId::new(self.font_size, egui::FontFamily::Proportional)),
-            (egui::TextStyle::Small, egui::FontId::new(self.font_size * 0.8, egui::FontFamily::Proportional)),
+            (
+                egui::TextStyle::Heading,
+                egui::FontId::new(self.font_size * 1.0, egui::FontFamily::Proportional),
+            ),
+            (
+                egui::TextStyle::Body,
+                egui::FontId::new(self.font_size, egui::FontFamily::Proportional),
+            ),
+            (
+                egui::TextStyle::Monospace,
+                egui::FontId::new(self.font_size, egui::FontFamily::Monospace),
+            ),
+            (
+                egui::TextStyle::Button,
+                egui::FontId::new(self.font_size, egui::FontFamily::Proportional),
+            ),
+            (
+                egui::TextStyle::Small,
+                egui::FontId::new(self.font_size * 0.8, egui::FontFamily::Proportional),
+            ),
         ]
-            .into();
+        .into();
         ctx.set_style(style);
 
+        // 创建一个中央面板
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("这是一个简单的GitHub项目管理工具,可以用来更新多个项目的代码");
 
@@ -90,7 +106,13 @@ impl eframe::App for App {
                 ui.text_edit_singleline(&mut self.new_project.notes);
             });
 
-            if ui.add(egui::Button::new("添加项目").stroke(Stroke::new(2.0, Color32::GRAY))).clicked() {
+            ui.separator();
+
+            // 添加项目按钮
+            if ui
+                .add(egui::Button::new("添加项目").stroke(Stroke::new(2.0, Color32::GRAY)))
+                .clicked()
+            {
                 if !self.new_project.path.is_empty() && !self.new_project.name.is_empty() {
                     if let Ok(repo) = Repository::open(&self.new_project.path) {
                         if repo.find_remote("origin").is_ok() {
@@ -101,10 +123,16 @@ impl eframe::App for App {
                             self.new_project.notes.clear();
                             self.save_config();
                         } else {
-                            self.log_error(format!("项目 {} 不是一个有效的Git仓库或没有origin远程仓库", self.new_project.name));
+                            self.log_error(format!(
+                                "项目 {} 不是一个有效的Git仓库或没有origin远程仓库",
+                                self.new_project.name
+                            ));
                         }
                     } else {
-                        self.log_error(format!("项目路径 {} 不存在或不是一个有效的Git仓库", self.new_project.path));
+                        self.log_error(format!(
+                            "项目路径 {} 不存在或不是一个有效的Git仓库",
+                            self.new_project.path
+                        ));
                     }
                 } else {
                     self.log_error("项目路径和名称不能为空".to_string());
@@ -113,42 +141,86 @@ impl eframe::App for App {
 
             ui.separator();
 
+            // 显示按钮ui
             ui.horizontal(|ui| {
-                if ui.add(egui::Button::new("更新选中项目").stroke(Stroke::new(2.0, Color32::GRAY))).clicked() {
+                if ui
+                    .add(egui::Button::new("更新选中项目").stroke(Stroke::new(2.0, Color32::GRAY)))
+                    .clicked()
+                {
                     self.update_selected_projects();
                 }
 
-                if ui.add(egui::Button::new("删除选中项目").stroke(Stroke::new(2.0, Color32::GRAY))).clicked() {
+                if ui
+                    .add(egui::Button::new("删除选中项目").stroke(Stroke::new(2.0, Color32::GRAY)))
+                    .clicked()
+                {
                     self.delete_selected_projects();
                 }
             });
 
             ui.separator();
 
-            egui::ScrollArea::new([false, true]).id_source("project_list").show(ui, |ui| {
-                for (i, project) in self.projects.iter_mut().enumerate() {
-                    ui.horizontal(|ui| {
-                        ui.checkbox(&mut self.selected_projects[i], "");
-                        ui.label(&project.name);
-                    });
-                    ui.label(&project.path);
-                    ui.label(&project.notes);
-                    ui.separator();
-                }
-            });
+            // 显示项目列表ui
+            egui::ScrollArea::new([false, true])
+                .id_source("project_list")
+                .show(ui, |ui| {
+                    for (i, project) in self.projects.iter_mut().enumerate() {
+                        ui.horizontal(|ui| {
+                            ui.checkbox(&mut self.selected_projects[i], "");
+                            ui.label(&project.name);
+                        });
+                        ui.label(&project.path);
+                        ui.label(&project.notes);
+                        ui.separator();
+                    }
+                });
 
             ui.separator();
 
+            // 显示进度条ui
             ui.label(format!("进度: {}%", (self.progress * 100.0) as u32));
             ui.add(egui::ProgressBar::new(self.progress).show_percentage());
 
             ui.separator();
 
-            egui::ScrollArea::new([false, true]).id_source("log_area")
+            // 显示日志ui
+            egui::ScrollArea::new([true, true])
+                .id_source("log_area")
                 .max_height(200.0)
                 .show(ui, |ui| {
-                    ui.text_edit_multiline(&mut self.log_buffer);
+                    // 创建一个自定义的 Frame 风格
+                    let frame = egui::Frame {
+                        fill: egui::Color32::from_rgb(30, 30, 30), // 深灰色背景
+                        stroke: egui::Stroke::new(2.0, egui::Color32::from_rgb(120, 120, 120)), // 灰色边框
+                        inner_margin: egui::style::Margin {
+                            left: 5.0,
+                            top: 5.0,
+                            right: 5.0,
+                            bottom: 5.0,
+                        }, // 设置内边距
+                        ..Default::default()
+                    };
+
+                    // 应用自定义 Frame
+                    frame.show(ui, |ui| {
+                        ui.add(
+                            egui::TextEdit::multiline(&mut self.log_buffer)
+                                .font(egui::TextStyle::Body) // 设置字体样式
+                                .text_color(egui::Color32::WHITE) // 设置文字颜色
+                                .desired_width(ui.available_width()),
+                        ); // 使用全部可用宽度
+                    });
                 });
+            // 添加空白行
+            ui.add_space(10.0);
+
+
+
+
+            // 使用label标签右下角显示版本号，靠右对齐，靠下对齐
+            ui.with_layout(egui::Layout::right_to_left(Default::default()), |ui| {
+                ui.label("v0.1.0").on_hover_text("BY：刘一手 and fox666");
+            });
         });
 
         frame.set_window_size(ctx.used_size());
@@ -165,7 +237,10 @@ impl eframe::App for App {
 
 impl App {
     fn update_selected_projects(&mut self) {
-        let selected_projects: Vec<_> = self.selected_projects.iter().enumerate()
+        let selected_projects: Vec<_> = self
+            .selected_projects
+            .iter()
+            .enumerate()
             .filter(|(_, &selected)| selected)
             .map(|(index, _)| index)
             .collect();
@@ -182,27 +257,46 @@ impl App {
                             log_messages.push(format!("[ERROR] 无法获取远程更新: {}", e));
                         } else {
                             if let Ok(fetch_head) = repo.find_reference("FETCH_HEAD") {
-                                let fetch_commit = repo.reference_to_annotated_commit(&fetch_head).unwrap();
+                                let fetch_commit =
+                                    repo.reference_to_annotated_commit(&fetch_head).unwrap();
                                 let analysis = repo.merge_analysis(&[&fetch_commit]).unwrap();
 
                                 if analysis.0.is_up_to_date() {
-                                    log_messages.push(format!("[INFO] 项目 {} 已经是最新版本", project.name));
+                                    log_messages.push(format!(
+                                        "[INFO] 项目 {} 已经是最新版本",
+                                        project.name
+                                    ));
                                 } else if analysis.0.is_fast_forward() {
                                     let refname = "refs/heads/master";
                                     let mut reference = repo.find_reference(refname).unwrap();
-                                    reference.set_target(fetch_commit.id(), "Fast-Forward").unwrap();
+                                    reference
+                                        .set_target(fetch_commit.id(), "Fast-Forward")
+                                        .unwrap();
                                     repo.set_head(refname).unwrap();
-                                    repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force())).unwrap();
-                                    log_messages.push(format!("[INFO] 项目 {} 更新成功", project.name));
+                                    repo.checkout_head(Some(
+                                        git2::build::CheckoutBuilder::default().force(),
+                                    ))
+                                    .unwrap();
+                                    log_messages
+                                        .push(format!("[INFO] 项目 {} 更新成功", project.name));
                                 } else {
-                                    log_messages.push(format!("[ERROR] 项目 {} 存在冲突,需要手动解决", project.name));
+                                    log_messages.push(format!(
+                                        "[ERROR] 项目 {} 存在冲突,需要手动解决",
+                                        project.name
+                                    ));
                                 }
                             } else {
-                                log_messages.push(format!("[ERROR] 项目 {} 的 FETCH_HEAD 文件损坏或不存在", project.name));
+                                log_messages.push(format!(
+                                    "[ERROR] 项目 {} 的 FETCH_HEAD 文件损坏或不存在",
+                                    project.name
+                                ));
                             }
                         }
                     } else {
-                        log_messages.push(format!("[ERROR] 无法找到远程仓库'origin': {}", project.name));
+                        log_messages.push(format!(
+                            "[ERROR] 无法找到远程仓库'origin': {}",
+                            project.name
+                        ));
                     }
                 } else {
                     log_messages.push(format!("[ERROR] 无法打开仓库: {}", project.path));
@@ -281,7 +375,7 @@ fn main() {
     }
 
     eframe::run_native(
-        "GitHub项目管理工具-By：刘一手",
+        "GitHub项目管理工具",
         options,
         Box::new(|cc| {
             cc.egui_ctx.set_fonts(fonts);
@@ -299,6 +393,3 @@ fn load_fallback_font() -> Option<egui::FontData> {
         None
     }
 }
-
-
-
