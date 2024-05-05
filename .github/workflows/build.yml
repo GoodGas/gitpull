@@ -3,57 +3,37 @@ name: Build
 on:
   workflow_dispatch:
 
-env:
-  CARGO_TERM_COLOR: always
-
 jobs:
   build:
+    name: Build
+    runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         include:
+          - os: ubuntu-latest
+            artifact_name: gitpull-linux-amd64
+            asset_name: gitpull-linux-amd64
+          - os: macos-latest
+            artifact_name: gitpull-macos-amd64
+            asset_name: gitpull-macos-amd64
           - os: windows-latest
-          - os: macOS-latest
-            target: x86_64-apple-darwin
-          - os: macOS-latest
-            target: aarch64-apple-darwin
-
-    runs-on: ${{ matrix.os }}
+            artifact_name: gitpull-windows-amd64.exe
+            asset_name: gitpull-windows-amd64.exe
 
     steps:
-    - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Rust
-      uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        target: ${{ matrix.target }}
-        override: true
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
 
-    - name: Install dependencies (macOS)
-      if: startsWith(matrix.os, 'macOS')
-      run: |
-        brew install openssl@1.1
-        echo "OPENSSL_DIR=/usr/local/opt/openssl@1.1" >> $GITHUB_ENV
-        echo "OPENSSL_STATIC=yes" >> $GITHUB_ENV
-        echo "OPENSSL_LIB_DIR=/usr/local/opt/openssl@1.1/lib" >> $GITHUB_ENV
-        echo "OPENSSL_INCLUDE_DIR=/usr/local/opt/openssl@1.1/include" >> $GITHUB_ENV
+      - uses: Swatinem/rust-cache@v2
 
-    - name: Set environment variables (macOS)
-      if: startsWith(matrix.os, 'macOS')
-      run: |
-        echo "PATH=/usr/local/bin:$PATH" >> $GITHUB_ENV
-        echo "PKG_CONFIG_PATH=/usr/local/opt/openssl@1.1/lib/pkgconfig" >> $GITHUB_ENV
+      - name: Build
+        run: cargo build --release --locked
 
-    - name: Build (macOS and Windows)
-      run: cargo build --release --target ${{ matrix.target }}
-
-    - name: Strip binary (macOS)
-      if: startsWith(matrix.os, 'macOS')
-      run: |
-        strip target/${{ matrix.target }}/release/gitpull
-
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v3
-      with:
-        name: binary-${{ matrix.os }}-${{ matrix.target }}
-        path: target/${{ matrix.target }}/release/gitpull
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: target/release/${{ matrix.asset_name }}
