@@ -10,35 +10,50 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [windows-latest, macOS-latest]
-
+        os: [windows-latest, macOS-latest]  
+        include:
+          - os: macOS-latest
+            target: x86_64-apple-darwin
+          - os: macOS-latest  
+            target: aarch64-apple-darwin
+            
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
+        target: ${{ matrix.target }}
 
     - name: Build
-      run: cargo build --release --verbose
+      env:
+        RUSTTARGET: ${{ matrix.target }}
+      run: cargo build --release --target $RUSTTARGET
 
-    - name: Strip binary (macOS)
+    - name: Strip binary (macOS)  
       if: matrix.os == 'macOS-latest'
-      run: strip target/release/gitpull
+      run: strip target/${{ matrix.target }}/release/gitpull
 
     - name: Upload artifacts (Windows)
       if: matrix.os == 'windows-latest'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v4
       with:
         name: binary-windows
         path: target/release/*.exe
 
-    - name: Upload artifacts (macOS)
-      if: matrix.os == 'macOS-latest'
-      uses: actions/upload-artifact@v2
+    - name: Upload artifacts (macOS-Intel)
+      if: matrix.os == 'macOS-latest' && matrix.target == 'x86_64-apple-darwin'
+      uses: actions/upload-artifact@v4
       with:
-        name: binary-macos
-        path: target/release/gitpull
+        name: binary-macos-intel 
+        path: target/x86_64-apple-darwin/release/gitpull
+
+    - name: Upload artifacts (macOS-ARM)
+      if: matrix.os == 'macOS-latest' && matrix.target == 'aarch64-apple-darwin'
+      uses: actions/upload-artifact@v4
+      with:
+        name: binary-macos-arm
+        path: target/aarch64-apple-darwin/release/gitpull
