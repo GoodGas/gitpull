@@ -32,17 +32,17 @@ jobs:
     - name: Install OpenSSL (macOS, x86_64)
       if: matrix.os == 'macOS-latest' && matrix.target == 'x86_64-apple-darwin'
       run: |
-        brew install openssl
-        echo "OPENSSL_DIR=$(brew --prefix openssl)" >> $GITHUB_ENV
+        brew install openssl@1.1
+        echo "OPENSSL_DIR=$(brew --prefix openssl@1.1)" >> $GITHUB_ENV
         echo "OPENSSL_STATIC=yes" >> $GITHUB_ENV
-        echo "OPENSSL_LIB_DIR=/usr/local/opt/openssl@1.1/lib" >> $GITHUB_ENV
-        echo "OPENSSL_INCLUDE_DIR=/usr/local/opt/openssl@1.1/include" >> $GITHUB_ENV
+        echo "OPENSSL_LIB_DIR=$(brew --prefix openssl@1.1)/lib" >> $GITHUB_ENV
+        echo "OPENSSL_INCLUDE_DIR=$(brew --prefix openssl@1.1)/include" >> $GITHUB_ENV
 
     - name: Install OpenSSL (macOS, arm64)
       if: matrix.os == 'macOS-latest' && matrix.target == 'aarch64-apple-darwin'
       run: |
-        brew install openssl
-        echo "OPENSSL_DIR=$(brew --prefix openssl)" >> $GITHUB_ENV
+        brew install openssl@1.1
+        echo "OPENSSL_DIR=$(brew --prefix openssl@1.1)" >> $GITHUB_ENV
 
     - name: Build (Windows)
       if: matrix.os == 'windows-latest'
