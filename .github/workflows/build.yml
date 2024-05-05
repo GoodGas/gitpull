@@ -24,14 +24,13 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: aarch64-apple-darwin  # 为 macOS 添加 ARM 目标
+          targets: aarch64-apple-darwin,x86_64-apple-darwin  # 为 macOS 添加 Intel 和 ARM 目标
 
       - uses: Swatinem/rust-cache@v2
 
       - name: Build
         run: |
           if [ "${{ matrix.os }}" == "macos-latest" ]; then
-            rustup target add aarch64-apple-darwin
             cargo build --release --locked --target=aarch64-apple-darwin
             cargo build --release --locked --target=x86_64-apple-darwin
             lipo -create -output target/release/${{ matrix.asset_name }} target/aarch64-apple-darwin/release/${{ matrix.asset_name }} target/x86_64-apple-darwin/release/${{ matrix.asset_name }}
