@@ -10,15 +10,12 @@ jobs:
     strategy:
       matrix:
         include:
-          # - os: ubuntu-latest
-          #   artifact_name: gitpull-linux-amd64
-            # asset_name: gitpull-linux-amd64
           - os: macos-latest
             artifact_name: gitpull-macos-amd64
-            asset_name: gitpull-macos-amd64
+            asset_name: gitpull
           - os: windows-latest
             artifact_name: gitpull-windows-amd64.exe
-            asset_name: gitpull-windows-amd64.exe
+            asset_name: gitpull.exe
 
     steps:
       - name: Checkout code
