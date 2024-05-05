@@ -10,13 +10,13 @@ jobs:
   build:
     strategy:
       matrix:
-        os: [windows-latest, macOS-latest]  
         include:
+          - os: windows-latest
           - os: macOS-latest
             target: x86_64-apple-darwin
-          - os: macOS-latest  
+          - os: macOS-latest
             target: aarch64-apple-darwin
-            
+
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -28,12 +28,17 @@ jobs:
         toolchain: stable
         target: ${{ matrix.target }}
 
-    - name: Build
+    - name: Build (Windows)
+      if: matrix.os == 'windows-latest'
+      run: cargo build --release
+
+    - name: Build (macOS)
+      if: matrix.os == 'macOS-latest'
       env:
         RUSTTARGET: ${{ matrix.target }}
       run: cargo build --release --target $RUSTTARGET
 
-    - name: Strip binary (macOS)  
+    - name: Strip binary (macOS)
       if: matrix.os == 'macOS-latest'
       run: strip target/${{ matrix.target }}/release/gitpull
 
@@ -48,7 +53,7 @@ jobs:
       if: matrix.os == 'macOS-latest' && matrix.target == 'x86_64-apple-darwin'
       uses: actions/upload-artifact@v4
       with:
-        name: binary-macos-intel 
+        name: binary-macos-intel
         path: target/x86_64-apple-darwin/release/gitpull
 
     - name: Upload artifacts (macOS-ARM)
