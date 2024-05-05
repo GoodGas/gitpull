@@ -21,16 +21,16 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    
-    - name: Install Rust toolchain
+
+    - name: Set up Rust
       uses: actions-rs/toolchain@v1
       with:
         toolchain: stable
         target: ${{ matrix.target }}
         override: true
 
-- name: Install OpenSSL (macOS, x86_64)
-      if: matrix.os == 'macOS-latest' && matrix.target == 'x86_64-apple-darwin'
+    - name: Install dependencies (macOS)
+      if: startsWith(matrix.os, 'macOS')
       run: |
         brew install openssl@1.1
         echo "OPENSSL_DIR=/usr/local/opt/openssl@1.1" >> $GITHUB_ENV
@@ -38,45 +38,22 @@ jobs:
         echo "OPENSSL_LIB_DIR=/usr/local/opt/openssl@1.1/lib" >> $GITHUB_ENV
         echo "OPENSSL_INCLUDE_DIR=/usr/local/opt/openssl@1.1/include" >> $GITHUB_ENV
 
-    - name: Build (macOS, x86_64)
-      if: matrix.os == 'macOS-latest' && matrix.target == 'x86_64-apple-darwin'
+    - name: Set environment variables (macOS)
+      if: startsWith(matrix.os, 'macOS')
       run: |
-        export PATH="/usr/local/bin:$PATH" # Ensure using proper bin tools
-        export PKG_CONFIG_PATH="/usr/local/opt/openssl@1.1/lib/pkgconfig"
-        cargo build --release --target ${{ matrix.target }}
+        echo "PATH=/usr/local/bin:$PATH" >> $GITHUB_ENV
+        echo "PKG_CONFIG_PATH=/usr/local/opt/openssl@1.1/lib/pkgconfig" >> $GITHUB_ENV
 
-    - name: Build (Windows)
-      if: matrix.os == 'windows-latest'
-      run: cargo build --release
-
-    - name: Build (macOS)
-      if: matrix.os == 'macOS-latest'
-      run: |
-        export PATH="/usr/local/bin:$PATH" # Ensure using proper bin tools
-        cargo build --release --target ${{ matrix.target }}
+    - name: Build (macOS and Windows)
+      run: cargo build --release --target ${{ matrix.target }}
 
     - name: Strip binary (macOS)
-      if: matrix.os == 'macOS-latest'
+      if: startsWith(matrix.os, 'macOS')
       run: |
         strip target/${{ matrix.target }}/release/gitpull
 
-    - name: Upload artifacts (Windows)
-      if: matrix.os == 'windows-latest'
+    - name: Upload artifacts
       uses: actions/upload-artifact@v3
       with:
-        name: binary-windows
-        path: target/release/*.exe
-
-    - name: Upload artifacts (macOS-Intel)
-      if: matrix.os == 'macOS-latest' && matrix.target == 'x86_64-apple-darwin'
-      uses: actions/upload-artifact@v3
-      with:
-        name: binary-macos-intel
-        path: target/x86_64-apple-darwin/release/gitpull
-
-    - name: Upload artifacts (macOS-ARM)
-      if: matrix.os == 'macOS-latest' && matrix.target == 'aarch64-apple-darwin' 
-      uses: actions/upload-artifact@v3
-      with:
-        name: binary-macos-arm
-        path: target/aarch64-apple-darwin/release/gitpull
+        name: binary-${{ matrix.os }}-${{ matrix.target }}
+        path: target/${{ matrix.target }}/release/gitpull
