@@ -25,6 +25,10 @@ jobs:
     - name: Build
       run: cargo build --release --verbose
 
+    - name: Strip binary (macOS)
+      if: matrix.os == 'macOS-latest'
+      run: strip target/release/gitpull
+
     - name: Upload artifacts (Windows)
       if: matrix.os == 'windows-latest'
       uses: actions/upload-artifact@v2
@@ -32,16 +36,9 @@ jobs:
         name: binary-windows
         path: target/release/*.exe
 
-    - name: Upload artifacts (Linux)
-      if: matrix.os == 'ubuntu-latest'
-      uses: actions/upload-artifact@v2
-      with:
-        name: binary-linux
-        path: target/release/*
-
     - name: Upload artifacts (macOS)
       if: matrix.os == 'macOS-latest'
       uses: actions/upload-artifact@v2
       with:
         name: binary-macos
-        path: target/release/*
+        path: target/release/gitpull
