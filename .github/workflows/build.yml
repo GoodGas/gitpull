@@ -37,28 +37,3 @@ jobs:
         with:
           name: ${{ matrix.artifact_name }}
           path: target/release/${{ matrix.asset_name }}
-
-  create-universal-binary:
-    needs: build
-    runs-on: macos-latest
-
-    steps:
-      - name: Download aarch64 artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: gitpull-macos-aarch64
-
-      - name: Download x86_64 artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: gitpull-macos-x86_64
-
-      - name: Combine binaries
-        run: |
-          lipo -create -output gitpull gitpull-macos-aarch64/gitpull gitpull-macos-x86_64/gitpull
-
-      - name: Upload universal binary
-        uses: actions/upload-artifact@v3
-        with:
-          name: gitpull-macos-universal
-          path: gitpull
