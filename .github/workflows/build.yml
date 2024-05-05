@@ -11,7 +11,7 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            artifact_name: gitpull-macos-universal
+            artifact_name: gitpull-macos
             asset_name: gitpull
           - os: windows-latest
             artifact_name: gitpull-windows-amd64.exe
@@ -23,20 +23,11 @@ jobs:
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-apple-darwin,x86_64-apple-darwin  # 为 macOS 添加 ARM 和 Intel 目标
 
       - uses: Swatinem/rust-cache@v2
 
       - name: Build
-        run: |
-          if [ "${{ matrix.os }}" == "macos-latest" ]; then
-            cargo build --release --locked --target=aarch64-apple-darwin
-            cargo build --release --locked --target=x86_64-apple-darwin
-            lipo -create -output target/release/${{ matrix.asset_name }} target/aarch64-apple-darwin/release/${{ matrix.asset_name }} target/x86_64-apple-darwin/release/${{ matrix.asset_name }}
-          else
-            cargo build --release --locked
-          fi
+        run: cargo build --release --locked
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
