@@ -84,7 +84,7 @@ impl eframe::App for App {
                 egui::FontId::new(self.font_size * 0.8, egui::FontFamily::Proportional),
             ),
         ]
-        .into();
+            .into();
         ctx.set_style(style);
 
         // 创建一个中央面板
@@ -236,6 +236,7 @@ impl eframe::App for App {
 }
 
 impl App {
+
     fn update_selected_projects(&mut self) {
         let selected_projects: Vec<_> = self
             .selected_projects
@@ -256,38 +257,27 @@ impl App {
                         if let Err(e) = remote.fetch(&["master"], None, None) {
                             log_messages.push(format!("[ERROR] 无法获取远程更新: {}", e));
                         } else {
-                            if let Ok(fetch_head) = repo.find_reference("FETCH_HEAD") {
-                                let fetch_commit =
-                                    repo.reference_to_annotated_commit(&fetch_head).unwrap();
-                                let analysis = repo.merge_analysis(&[&fetch_commit]).unwrap();
+                            let fetch_commit = repo.reference_to_annotated_commit(&repo.head().unwrap()).unwrap();
+                            let analysis = repo.merge_analysis(&[&fetch_commit]).unwrap();
 
-                                if analysis.0.is_up_to_date() {
-                                    log_messages.push(format!(
-                                        "[INFO] 项目 {} 已经是最新版本",
-                                        project.name
-                                    ));
-                                } else if analysis.0.is_fast_forward() {
-                                    let refname = "refs/heads/master";
-                                    let mut reference = repo.find_reference(refname).unwrap();
-                                    reference
-                                        .set_target(fetch_commit.id(), "Fast-Forward")
-                                        .unwrap();
-                                    repo.set_head(refname).unwrap();
-                                    repo.checkout_head(Some(
-                                        git2::build::CheckoutBuilder::default().force(),
-                                    ))
+                            if analysis.0.is_up_to_date() {
+                                log_messages.push(format!(
+                                    "[INFO] 项目 {} 已经是最新版本",
+                                    project.name
+                                ));
+                            } else if analysis.0.is_fast_forward() {
+                                let refname = "refs/heads/master";
+                                let mut reference = repo.find_reference(refname).unwrap();
+                                reference.set_target(fetch_commit.id(), "Fast-Forward").unwrap();
+                                repo.set_head(refname).unwrap();
+                                repo.checkout_head(Some(
+                                    git2::build::CheckoutBuilder::default().force(),
+                                ))
                                     .unwrap();
-                                    log_messages
-                                        .push(format!("[INFO] 项目 {} 更新成功", project.name));
-                                } else {
-                                    log_messages.push(format!(
-                                        "[ERROR] 项目 {} 存在冲突,需要手动解决",
-                                        project.name
-                                    ));
-                                }
+                                log_messages.push(format!("[INFO] 项目 {} 更新成功", project.name));
                             } else {
                                 log_messages.push(format!(
-                                    "[ERROR] 项目 {} 的 FETCH_HEAD 文件损坏或不存在",
+                                    "[ERROR] 项目 {} 存在冲突,需要手动解决",
                                     project.name
                                 ));
                             }
